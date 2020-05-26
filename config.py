@@ -11,7 +11,7 @@
 # Paths.
 
 result_dir = '/content/drive/My Drive/stylegan/results'
-data_dir = 'datasets'
+data_dir = '/content/drive/My Drive/stylegan/datasets'
 cache_dir = 'cache'
 run_dir_ignore = ['results', 'datasets', 'cache']
 
