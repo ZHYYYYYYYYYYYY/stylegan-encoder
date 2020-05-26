@@ -29,12 +29,13 @@ if 1:
     dataset       = EasyDict()                                                             # Options for load_dataset().
     sched         = EasyDict()                                                             # Options for TrainingSchedule.
     grid          = EasyDict(size='4k', layout='random')                                   # Options for setup_snapshot_image_grid().
-    metrics       = [metric_base.fid50k]                                                   # Options for MetricGroup.
+    metrics       = None                                                                   # Options for MetricGroup.
     submit_config = dnnlib.SubmitConfig()                                                  # Options for dnnlib.submit_run().
     tf_config     = {'rnd.np_random_seed': 1000}                                           # Options for tflib.init_tf().
 
     # Dataset.
-    desc += '-ffhq';     dataset = EasyDict(tfrecord_dir='ffhq');              train.mirror_augment = True
+    # desc += '-ffhq';     dataset = EasyDict(tfrecord_dir='ffhq');              train.mirror_augment = True
+    desc += '-custom_dataset';     dataset = EasyDict(tfrecord_dir='/content/drive/My Drive/stylegan/datasets/', resolution=1024); train.mirror_augment = True
     # desc += '-cub';     dataset = EasyDict(tfrecord_dir='CUB');             train.mirror_augment = True
     # desc += 'celebahq-binary';     dataset = EasyDict(tfrecord_dir='celebahq-binary', resolution=256);      train.mirror_augment = True
     #desc += 'coco_train';          dataset = EasyDict(tfrecord_dir='coco_train', resolution=256);           train.mirror_augment = True
@@ -44,10 +45,10 @@ if 1:
     #desc += '-cat';      dataset = EasyDict(tfrecord_dir='lsun-cat-full');     train.mirror_augment = False
 
     # Number of GPUs.
-    #desc += '-1gpu'; submit_config.num_gpus = 1; sched.minibatch_base = 4; sched.minibatch_dict = {4: 128, 8: 128, 16: 128, 32: 64, 64: 32, 128: 16, 256: 8, 512: 4}
+    desc += '-1gpu'; submit_config.num_gpus = 1; sched.minibatch_base = 4; sched.minibatch_dict = {4: 128, 8: 128, 16: 128, 32: 64, 64: 32, 128: 16, 256: 8, 512: 4}
     #desc += '-2gpu'; submit_config.num_gpus = 2; sched.minibatch_base = 8; sched.minibatch_dict = {4: 256, 8: 256, 16: 128, 32: 64, 64: 32, 128: 16, 256: 8}
     #desc += '-4gpu'; submit_config.num_gpus = 4; sched.minibatch_base = 16; sched.minibatch_dict = {4: 512, 8: 256, 16: 128, 32: 64, 64: 32, 128: 16}
-    desc += '-8gpu'; submit_config.num_gpus = 8; sched.minibatch_base = 32; sched.minibatch_dict = {4: 512, 8: 256, 16: 128, 32: 64, 64: 32}
+    # desc += '-8gpu'; submit_config.num_gpus = 8; sched.minibatch_base = 32; sched.minibatch_dict = {4: 512, 8: 256, 16: 128, 32: 64, 64: 32}
 
     # Class conditioning
     # desc += '-cond'; dataset.max_label_size = 'full' # conditioned on full label
@@ -56,7 +57,7 @@ if 1:
     #desc += '-fp16'; G.dtype = 'float16'; D.dtype = 'float16'; G.epsilon=1e-4; G_opt.use_loss_scaling = True; D_opt.use_loss_scaling = True; sched.max_minibatch_per_gpu = {512: 16, 1024: 8}
 
     # Default options.
-    train.total_kimg = 25000
+    train.total_kimg = 42
     sched.lod_initial_resolution = 8
     sched.G_lrate_dict = {128: 0.0015, 256: 0.002, 512: 0.003, 1024: 0.003}
     sched.D_lrate_dict = EasyDict(sched.G_lrate_dict)
@@ -182,9 +183,12 @@ if 0:
 # Calls the function indicated by 'train' using the selected options.
 
 def main():
+    submit_config.submit_target = dnnlib.SubmitTarget.LOCAL
+    submit_config.do_not_copy_source_files = True
     kwargs = EasyDict(train)
     kwargs.update(G_args=G, D_args=D, G_opt_args=G_opt, D_opt_args=D_opt, G_loss_args=G_loss, D_loss_args=D_loss)
     kwargs.update(dataset_args=dataset, sched_args=sched, grid_args=grid, metric_arg_list=metrics, tf_config=tf_config)
+    kwargs.update(resume_run_id='/content/drive/My Drive/stylegan/karras2019stylegan-ffhq-1024x1024.pkl')
     kwargs.submit_config = copy.deepcopy(submit_config)
     kwargs.submit_config.run_dir_root = dnnlib.submission.submit.get_template_from_path(config.result_dir)
     kwargs.submit_config.run_dir_ignore += config.run_dir_ignore
